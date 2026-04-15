@@ -1,7 +1,27 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { X509Certificate } from 'node:crypto';
 import type { CountryManifest, CertificateEntry, RegistryEntry } from './types.js';
 import { derivePathKey } from './normalize.js';
+
+/**
+ * Parse the Subject DN string from Node's X509Certificate into components.
+ * Node returns format like: "C=CR\nO=BCCR\nCN=CA SINPE - PERSONA FISICA v2"
+ */
+function parseSubjectDN(subject: string): { cn?: string; org?: string; country?: string } {
+  const parts: Record<string, string> = {};
+  for (const line of subject.split('\n')) {
+    const eq = line.indexOf('=');
+    if (eq > 0) {
+      parts[line.slice(0, eq).trim()] = line.slice(eq + 1).trim();
+    }
+  }
+  return {
+    cn: parts['CN'],
+    org: parts['O'],
+    country: parts['C'],
+  };
+}
 
 /**
  * Trust Registry — indexes certificates from attestto-trust and maps them
@@ -45,6 +65,7 @@ export class TrustRegistry {
 
   /**
    * Load a specific country's manifest and index certificates.
+   * Enriches manifest data by parsing PEM files for O/CN fields.
    */
   loadCountry(countryCode: string): void {
     const cc = countryCode.toLowerCase();
@@ -55,21 +76,34 @@ export class TrustRegistry {
     const manifest: CountryManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
     const entries: RegistryEntry[] = [];
 
-    // First pass: build hierarchy by checking issuer chains
-    const certsBySubject = new Map<string, CertificateEntry[]>();
+    // Enrich certs with O/CN from PEM if not already in manifest
     for (const cert of manifest.certificates) {
-      const existing = certsBySubject.get(cert.subject) ?? [];
-      existing.push(cert);
-      certsBySubject.set(cert.subject, existing);
+      if (!cert.organization || !cert.commonName) {
+        const pemPath = join(this.trustStorePath, cc, 'current', cert.file);
+        try {
+          const pem = readFileSync(pemPath, 'utf-8');
+          const x509 = new X509Certificate(pem);
+          const dn = parseSubjectDN(x509.subject);
+          cert.commonName = cert.commonName ?? dn.cn;
+          cert.organization = cert.organization ?? dn.org;
+        } catch {
+          // Fall back to subject string as CN
+          cert.commonName = cert.commonName ?? cert.subject;
+        }
+      }
     }
 
     // Identify root cert (self-signed)
     const rootCert = manifest.certificates.find(c => c.role === 'root');
-    const rootPathKey = rootCert ? derivePathKey(rootCert.subject) : '';
+    const rootPathKey = rootCert
+      ? derivePathKey(rootCert.commonName ?? rootCert.subject, rootCert.organization, cc)
+      : '';
     const rootDid = `did:pki:${cc}:${rootPathKey}`;
 
     for (const cert of manifest.certificates) {
-      const pathKey = derivePathKey(cert.subject);
+      const cn = cert.commonName ?? cert.subject;
+      const org = cert.organization;
+      const pathKey = derivePathKey(cn, org, cc);
       const did = `did:pki:${cc}:${pathKey}`;
       const pemPath = join(this.trustStorePath, cc, 'current', cert.file);
 
@@ -86,7 +120,11 @@ export class TrustRegistry {
       // Determine parent DID
       let parentDid: string | undefined;
       if (level !== 'root') {
-        const parentPathKey = derivePathKey(cert.issuer);
+        // Find the issuer cert to get its O/CN
+        const issuerCert = manifest.certificates.find(c => c.subject === cert.issuer);
+        const issuerCN = issuerCert?.commonName ?? cert.issuer;
+        const issuerOrg = issuerCert?.organization;
+        const parentPathKey = derivePathKey(issuerCN, issuerOrg, cc);
         parentDid = `did:pki:${cc}:${parentPathKey}`;
       }
 

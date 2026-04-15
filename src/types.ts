@@ -16,6 +16,10 @@ export interface CertificateEntry {
   validFrom: string;
   validTo: string;
   role: 'root' | 'intermediate';
+  /** Organization (O) field from Subject DN — optional, extracted from PEM if not in manifest */
+  organization?: string;
+  /** Common Name (CN) field from Subject DN — optional, extracted from PEM if not in manifest */
+  commonName?: string;
 }
 
 /** Country manifest from attestto-trust */

@@ -1,5 +1,5 @@
 export { parseDid, formatDid } from './parser.js';
-export { normalizeCN, deriveDid, derivePathKey } from './normalize.js';
+export { normalizeCN, derivePathSegments, deriveDid, derivePathKey } from './normalize.js';
 export { TrustRegistry } from './registry.js';
 export { buildDidDocument } from './document.js';
 export { DidPkiResolver } from './resolver.js';
