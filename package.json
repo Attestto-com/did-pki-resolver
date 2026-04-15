@@ -2,6 +2,7 @@
   "name": "@attestto/did-pki-resolver",
   "version": "0.1.0",
   "description": "Resolver for did:pki — bridging national PKI hierarchies to the DID ecosystem",
+  "homepage": "https://attestto.org/standards",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
