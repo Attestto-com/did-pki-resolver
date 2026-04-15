@@ -1,0 +1,45 @@
+{
+  "name": "@attestto/did-pki-resolver",
+  "version": "0.1.0",
+  "description": "Resolver for did:pki — bridging national PKI hierarchies to the DID ecosystem",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "did",
+    "pki",
+    "x509",
+    "resolver",
+    "w3c",
+    "decentralized-identity",
+    "digital-signatures"
+  ],
+  "author": "Eduardo Chongkan <eduardo@attestto.com>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Attestto-com/did-pki-resolver.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
