@@ -17,6 +17,8 @@
   ],
   "scripts": {
     "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "node --import tsx src/server.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "lint": "tsc --noEmit"
   },

@@ -1,0 +1,45 @@
+# Attestto Universal Resolver
+# Runs the DIF Universal Resolver with standard drivers + did:pki
+#
+# Usage:
+#   docker compose up -d
+#   curl http://localhost:8080/1.0/identifiers/did:pki:cr:raiz-nacional
+#   curl http://localhost:8080/1.0/identifiers/did:web:example.com
+
+services:
+  # DIF Universal Resolver — routes requests to method-specific drivers
+  uni-resolver-web:
+    image: universalresolver/uni-resolver-web:latest
+    ports:
+      - "8080:8080"
+    environment:
+      # Attestto drivers
+      - uniresolver_driver_did_pki_url=http://driver-did-pki:8080/1.0/identifiers/
+      # Community drivers (add as needed)
+      - uniresolver_driver_did_web_url=http://driver-did-web:8080/1.0/identifiers/
+      - uniresolver_driver_did_key_url=http://driver-did-key:8080/1.0/identifiers/
+    depends_on:
+      - driver-did-pki
+      - driver-did-web
+      - driver-did-key
+
+  # --- Attestto Drivers ---
+
+  driver-did-pki:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount attestto-trust as the cert data source
+      - ../attestto-trust:/app/trust-store:ro
+    environment:
+      - TRUST_STORE_PATH=/app/trust-store/countries
+      - PORT=8080
+
+  # --- Community Drivers ---
+
+  driver-did-web:
+    image: universalresolver/driver-did-web:latest
+
+  driver-did-key:
+    image: universalresolver/driver-did-key:latest
