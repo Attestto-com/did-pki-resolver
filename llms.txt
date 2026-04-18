@@ -1,0 +1,65 @@
+# @attestto/did-pki-resolver
+
+> npm resolver package for the did:pki DID method -- converts X.509 CA certificates into W3C DID Documents.
+
+Part of the [Attestto Open](https://attestto.org) ecosystem.
+
+## Install
+
+```bash
+npm install @attestto/did-pki-resolver
+```
+
+Requires Node >= 18.
+
+## What it does
+
+Given a `did:pki` identifier, returns a W3C DID Document containing the Certificate Authority's public keys (as JWK), trust chain position, and PKI metadata. Implements the [did:pki specification](https://github.com/Attestto-com/did-pki-spec).
+
+```typescript
+import { TrustRegistry, DidPkiResolver } from '@attestto/did-pki-resolver';
+
+const registry = new TrustRegistry('/path/to/attestto-trust/countries');
+registry.load();
+
+const resolver = new DidPkiResolver(registry);
+const result = resolver.resolve('did:pki:cr:sinpe:persona-fisica');
+console.log(result.didDocument);
+```
+
+## Core API
+
+- `TrustRegistry` -- Loads and indexes country CA manifests from the attestto-trust data store.
+- `DidPkiResolver` -- Main resolver class. Takes a `TrustRegistry`, exposes `resolve(did)`.
+- `parsePkiDid(did)` -- Parse and validate a did:pki identifier string.
+- `normalizeSubjectDN(subject)` -- Convert X.509 Subject DN to DID path segments.
+- `buildDidDocument(cert, parsed)` -- Construct a W3C DID Document from certificate data.
+
+## Source layout
+
+```
+src/
+  index.ts       -- Public exports
+  parser.ts      -- Parse/validate did:pki identifiers (spec section 4 ABNF)
+  normalize.ts   -- X.509 Subject DN -> DID path segments (spec section 7)
+  registry.ts    -- Trust registry, indexes attestto-trust manifests
+  document.ts    -- Build W3C DID Documents from cert data
+  resolver.ts    -- Main resolver, ties parser + registry + document builder
+  countries.ts   -- Country-specific metadata (hierarchy names, endEntityHints)
+  types.ts       -- TypeScript interfaces
+  server.ts      -- Optional HTTP server entry point
+```
+
+## Data source
+
+Reads from [`attestto-trust`](https://github.com/Attestto-com/attestto-trust) -- PEM-encoded X.509 certificates with `manifest.json` metadata per country. Currently covers Costa Rica; extensible to any national PKI.
+
+## Related packages
+
+- [`did-pki-spec`](https://github.com/Attestto-com/did-pki-spec) -- The W3C DID method specification this implements
+- [`attestto-did-resolver`](https://github.com/Attestto-com/attestto-did-resolver) -- Unified HTTP resolver service (wraps this package)
+- [`attestto-trust`](https://github.com/Attestto-com/attestto-trust) -- PKI trust store data
+
+## License
+
+Apache-2.0
