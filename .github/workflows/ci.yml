@@ -55,12 +55,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Tests require attestto-trust repo for CR certs
+      # Tests require the attestto-trust repo for CR certs as a sibling of this
+      # repo (tests resolve ../../attestto-trust/countries). actions/checkout
+      # cannot write outside the workspace, so check it out inside the repo and
+      # move it up to the expected sibling path.
       - name: Checkout attestto-trust
         uses: actions/checkout@v4
         with:
           repository: Attestto-com/attestto-trust
-          path: ../attestto-trust
+          path: attestto-trust
+
+      - name: Position trust store as sibling
+        run: mv attestto-trust ../attestto-trust
 
       - name: Run tests
         run: npm test

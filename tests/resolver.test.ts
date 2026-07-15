@@ -67,12 +67,32 @@ describe('DidPkiResolver', () => {
     assert.equal(result.didDocumentMetadata.deactivated, undefined);
   });
 
-  it('returns JWK public keys with x5t fingerprint', () => {
+  it('emits x5t#S256 as base64url matching the generation fingerprint (RFC 7517)', () => {
     const result = resolver.resolve('did:pki:cr:raiz-nacional');
-    const vm = result.didDocument!.verificationMethod[0];
-    assert.equal(vm.type, 'JsonWebKey2020');
-    assert.ok(vm.publicKeyJwk.kty);
-    assert.ok(vm.publicKeyJwk.x5t);
+    const doc = result.didDocument!;
+    const generations = doc.pkiMetadata.generations;
+
+    for (const vm of doc.verificationMethod) {
+      assert.equal(vm.type, 'JsonWebKey2020');
+      assert.ok(vm.publicKeyJwk.kty, 'JWK must have kty');
+
+      // Must use x5t#S256 (SHA-256), never bare x5t (RFC 7517 = SHA-1).
+      assert.equal((vm.publicKeyJwk as Record<string, unknown>).x5t, undefined, 'must not emit bare x5t');
+      const thumb = vm.publicKeyJwk['x5t#S256'];
+      assert.ok(thumb, 'must emit x5t#S256');
+
+      // Must be unpadded base64url decoding to a 32-byte SHA-256 digest.
+      assert.match(thumb!, /^[A-Za-z0-9_-]+$/, 'x5t#S256 must be unpadded base64url');
+      const bytes = Buffer.from(thumb!, 'base64url');
+      assert.equal(bytes.length, 32, 'x5t#S256 must decode to 32 bytes (SHA-256)');
+
+      // Must agree with the matching generation's hex fingerprint.
+      const fragment = vm.id.split('#')[1];
+      const gen = generations.find((g) => g.keyId.replace(/^#/, '') === fragment);
+      assert.ok(gen, `no generation for keyId #${fragment}`);
+      assert.equal(gen!.fingerprintAlgorithm, 'sha-256');
+      assert.equal(bytes.toString('hex'), gen!.fingerprint, 'x5t#S256 must decode to the generation fingerprint');
+    }
   });
 
   it('returns error for invalid DID', () => {

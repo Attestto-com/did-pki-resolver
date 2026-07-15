@@ -18,8 +18,9 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist/ dist/
 
-# Trust store is mounted or bundled at /app/trust-store
-# Default: expects attestto-trust/countries/ at this path
+# Bundle the trust store (copied before build by deploy script)
+COPY trust-store/ trust-store/
+
 ENV TRUST_STORE_PATH=/app/trust-store/countries
 ENV PORT=8080
 
