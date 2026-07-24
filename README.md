@@ -1,6 +1,12 @@
 # @attestto/did-pki-resolver
 
-Resolver for the [`did:pki`](https://github.com/Attestto-com/did-pki-spec) DID method — bridging national PKI hierarchies to the W3C DID ecosystem.
+[![CI](https://github.com/Attestto-com/did-pki-resolver/actions/workflows/ci.yml/badge.svg)](https://github.com/Attestto-com/did-pki-resolver/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![DID method](https://img.shields.io/badge/DID%20method-did%3Api-6f42c1.svg)](https://github.com/Attestto-com/did-pki-spec)
+[![status](https://img.shields.io/badge/status-alpha%20v0.1.0-orange.svg)](https://github.com/Attestto-com/did-pki-resolver/releases)
+
+Resolver for the [`did:pki`](https://github.com/Attestto-com/did-pki-spec) DID method that bridges national PKI hierarchies to the W3C DID ecosystem.
 
 ## What it does
 
